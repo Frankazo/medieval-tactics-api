@@ -35,6 +35,19 @@ mongoose.connect(db, {
 // instantiate express application object
 const app = express()
 
+// Socket.io imports
+const http = require('http')
+
+const socketio = require('socket.io')
+
+const router = require('./router')
+
+const { addUser, removeUser, getUser, getUsersInRoom } = require('./users')
+
+const server = http.createServer(app)
+
+const io = socketio(server)
+
 // set CORS headers on response from this API using the `cors` NPM package
 // `CLIENT_ORIGIN` is an environment variable that will be set on Heroku
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || `http://localhost:${clientDevPort}` }))
@@ -63,11 +76,49 @@ app.use(requestLogger)
 // register route files
 app.use(gameRoutes)
 app.use(userRoutes)
+app.use(router)
 
 // register error handling middleware
 // note that this comes after the route middlewares, because it needs to be
 // passed any error messages from them
 app.use(errorHandler)
+
+io.on('connect', (socket) => {
+  socket.on('join', ({ name, room }, callback) => {
+    const { error, user } = addUser({ id: socket.id, name, room })
+    console.log('Name ' + name)
+    console.log('Room ' + room)
+    if (error) return callback(error)
+
+    socket.join(user.room)
+
+    socket.emit('message', { user: 'admin', text: `${user.name}, welcome to room ${user.room}.` })
+    socket.broadcast.to(user.room).emit('message', { user: 'admin', text: `${user.name} has joined!` })
+
+    io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) })
+
+    callback()
+  })
+
+  socket.on('sendMessage', (message, callback) => {
+    const user = getUser(socket.id)
+
+    io.to(user.room).emit('message', { user: user.name, text: message })
+
+    callback()
+  })
+
+  socket.on('disconnect', () => {
+    const user = removeUser(socket.id)
+
+    if (user) {
+      io.to(user.room).emit('message', { user: 'Admin', text: `${user.name} has left.` })
+      io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) })
+    }
+  })
+})
+
+server.listen(process.env.PORT || 5000, () => console.log(`Server has started.`))
 
 // run API on designated port (4741 in this case)
 app.listen(port, () => {

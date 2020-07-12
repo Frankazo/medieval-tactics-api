@@ -39,7 +39,7 @@ const app = express()
 const http = require('http')
 const socketio = require('socket.io')
 
-const { newGame, closeGame, getGame } = require('./game/game')
+const { newGame, closeGame } = require('./game/game')
 
 const server = http.createServer(app)
 
@@ -78,11 +78,6 @@ app.use(userRoutes)
 // note that this comes after the route middlewares, because it needs to be
 // passed any error messages from them
 app.use(errorHandler)
-
-// run API on designated port (4741 in this case)
-app.listen(port, () => {
-  console.log('listening on port ' + port)
-})
 
 // Socket implementation
 io.on('connect', (socket) => {
@@ -126,7 +121,9 @@ io.on('connect', (socket) => {
   })
 })
 
-server.listen(process.env.PORT || 5000, () => console.log(`Server has started.`))
+server.listen(port, () => {
+  console.log('listening on port ' + port)
+})
 
 // needed for testing
 module.exports = app

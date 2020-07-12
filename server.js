@@ -110,9 +110,8 @@ io.on('connect', (socket) => {
   })
 
   socket.on('sendAction', (action, callback) => {
-    const game = getGame(socket.id)
-
-    io.to(game.gameId).emit('action', { action })
+    console.log(action)
+    io.to(action.gameId).emit('action', { action })
 
     callback()
   })

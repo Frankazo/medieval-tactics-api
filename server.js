@@ -35,6 +35,16 @@ mongoose.connect(db, {
 // instantiate express application object
 const app = express()
 
+// Socket.io imports
+const http = require('http')
+const socketio = require('socket.io')
+
+const { newGame, closeGame, getGame } = require('./game/game')
+
+const server = http.createServer(app)
+
+const io = socketio(server)
+
 // set CORS headers on response from this API using the `cors` NPM package
 // `CLIENT_ORIGIN` is an environment variable that will be set on Heroku
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || `http://localhost:${clientDevPort}` }))
@@ -73,6 +83,43 @@ app.use(errorHandler)
 app.listen(port, () => {
   console.log('listening on port ' + port)
 })
+
+// Socket implementation
+io.on('connect', (socket) => {
+  socket.on('join', ({ gameId }, callback) => {
+    const { error, game } = newGame({ id: socket.id, gameId })
+    console.log('gameId is: ' + gameId)
+    if (error) return callback(error)
+
+    socket.join(game.gameId)
+
+    socket.emit('message', { user: 'admin', text: `Welcome to room ${game.gameId}.` })
+    socket.broadcast.to(game.gameId).emit('message', { user: 'admin', text: `Another user has joined!` })
+
+    // io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) })
+
+    callback()
+  })
+
+  socket.on('sendAction', (action, callback) => {
+    const game = getGame(socket.id)
+
+    io.to(game.gameId).emit('action', { action })
+
+    callback()
+  })
+
+  socket.on('disconnect', () => {
+    const game = closeGame(socket.id)
+
+    if (game) {
+      io.to(game.gameId).emit('message', { user: 'Admin', text: `Game ended because opponent has left.` })
+      // io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) })
+    }
+  })
+})
+
+server.listen(process.env.PORT || 5000, () => console.log(`Server has started.`))
 
 // needed for testing
 module.exports = app

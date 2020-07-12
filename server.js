@@ -86,15 +86,23 @@ app.listen(port, () => {
 
 // Socket implementation
 io.on('connect', (socket) => {
-  socket.on('join', ({ gameId }, callback) => {
-    const { error, game } = newGame({ id: socket.id, gameId })
+  socket.on('join', ({ gameId, action }, callback) => {
+    let game
+    let error
+    if (action === 'create') {
+      const response = newGame({ id: socket.id, gameId })
+      game = response.game
+      error = response.error
+    }
+
+    console.log(game)
     console.log('gameId is: ' + gameId)
     if (error) return callback(error)
 
-    socket.join(game.gameId)
+    socket.join(gameId)
 
-    socket.emit('message', { user: 'admin', text: `Welcome to room ${game.gameId}.` })
-    socket.broadcast.to(game.gameId).emit('message', { user: 'admin', text: `Another user has joined!` })
+    socket.emit('message', { action: 'join', text: `Welcome to room ${gameId}.` })
+    socket.broadcast.to(gameId).emit('message', { action: 'new player', text: `Another user has joined!` })
 
     // io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) })
 
@@ -113,7 +121,7 @@ io.on('connect', (socket) => {
     const game = closeGame(socket.id)
 
     if (game) {
-      io.to(game.gameId).emit('message', { user: 'Admin', text: `Game ended because opponent has left.` })
+      io.to(game.gameId).emit('message', { action: 'leave', text: `Game ended because opponent has left.` })
       // io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) })
     }
   })

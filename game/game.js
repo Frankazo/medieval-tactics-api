@@ -14,7 +14,7 @@ const newGame = ({ id, gameId }) => {
 
   games.push(game)
 
-  return { games }
+  return { game }
 }
 
 // End a game
@@ -24,7 +24,7 @@ const closeGame = (id) => {
   if (index !== -1) return games.splice(index, 1)[0]
 }
 
-const getGame = (id) => games.find((game) => game.id === id)
+const getGame = (gameId) => games.find((game) => game.gameId === gameId)
 
 // const getUsersInRoom = (gameId) => users.filter((user) => user.gameId === gameId)
 

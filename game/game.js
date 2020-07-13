@@ -19,7 +19,8 @@ const newGame = ({ id, gameId }) => {
 
 // End a game
 const closeGame = (id) => {
-  const index = games.findIndex((game) => game.id === id)
+  console.log('reached closeGame function with: ' + id)
+  const index = games.findIndex((game) => game.gameId === id)
 
   if (index !== -1) return games.splice(index, 1)[0]
 }

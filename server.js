@@ -106,16 +106,25 @@ io.on('connect', (socket) => {
 
   socket.on('sendAction', (action, callback) => {
     console.log(action)
-    io.to(action.gameId).emit('action', { action })
+    io.to(action.gameId).emit('action', action)
 
     callback()
   })
 
-  socket.on('disconnect', () => {
-    const game = closeGame(socket.id)
+  socket.on('message', (action, callback) => {
+    console.log(action)
+    io.to(action.gameId).emit('message', action)
+
+    callback()
+  })
+
+  socket.on('disconnect', (gameId) => {
+    console.log('receive disconnect')
+    console.log(gameId)
+    const game = closeGame(gameId)
 
     if (game) {
-      io.to(game.gameId).emit('message', { action: 'leave', text: `Game ended because opponent has left.` })
+      io.to(gameId).emit('message', { action: 'leave', text: `Game ended because opponent has left.` })
       // io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) })
     }
   })

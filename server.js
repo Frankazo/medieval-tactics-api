@@ -39,7 +39,7 @@ const app = express()
 const http = require('http')
 const socketio = require('socket.io')
 
-const { newGame, closeGame } = require('./game/game')
+const { newGame, joinGame, closeGame } = require('./game/game')
 
 const server = http.createServer(app)
 
@@ -85,7 +85,11 @@ io.on('connect', (socket) => {
     let game
     let error
     if (action === 'create') {
-      const response = newGame({ id: socket.id, gameId })
+      const response = newGame(gameId)
+      game = response.game
+      error = response.error
+    } else {
+      const response = joinGame(gameId)
       game = response.game
       error = response.error
     }

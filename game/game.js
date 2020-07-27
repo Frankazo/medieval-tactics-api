@@ -1,20 +1,40 @@
 const games = []
 
 // create new Game
-const newGame = ({ id, gameId }) => {
+const newGame = (gameId) => {
   // name = name.trim().toLowerCase()
   gameId = gameId.trim().toLowerCase()
 
-  const existingGame = games.find((game) => game.gameId === gameId)
+  const existingGame = getGame(gameId)
 
   if (!gameId) return { error: 'Game Id is required.' }
   if (existingGame) return { error: 'Game Id is taken.' }
 
-  const game = { id, gameId }
+  const game = { gameId, player1: 'player1', player2: null }
 
   games.push(game)
 
-  return { game }
+  return game
+}
+
+const joinGame = (gameId) => {
+  gameId = gameId.trim().toLowerCase()
+
+  let game
+  game = getGame(gameId)
+
+  if (!gameId) return { error: 'Game Id is required.' }
+
+  if (!game) {
+    game = { gameId, player1: 'player1', player2: null }
+    games.push(game)
+  } else {
+    if (game.player2 !== null) return { error: 'Game is full.' }
+
+    game.player2 = 'player2'
+  }
+
+  return game
 }
 
 // End a game
@@ -29,4 +49,4 @@ const getGame = (gameId) => games.find((game) => game.gameId === gameId)
 
 // const getUsersInRoom = (gameId) => users.filter((user) => user.gameId === gameId)
 
-module.exports = { newGame, closeGame, getGame }
+module.exports = { newGame, joinGame, closeGame, getGame }
